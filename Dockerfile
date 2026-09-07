@@ -8,7 +8,7 @@ WORKDIR /build
 COPY requirements.txt .
 
 RUN pip install --upgrade pip --quiet \
-    && pip install --prefix=/install --no-cache-dir -r requirements.txt
+    && pip install --default-timeout=1000 --prefix=/install --no-cache-dir -r requirements.txt
 
 # --------------------------------------------------------------------------
 # Stage 2: runner — lean runtime image, no training code or test suite
