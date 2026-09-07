@@ -1,0 +1,14 @@
+# window_size: 24 — one full day of hourly NYC taxi readings; captures the diurnal cycle
+# batch_size: 64 — stable gradient estimates for ~8k training sequences
+# epochs: 50 — sufficient convergence for LSTM autoencoder on this 1D dataset
+# learning_rate: 0.001 — Adam default, well-proven across LSTM autoencoder literature
+# hidden_dim: 64 — compact but expressive latent space; avoids overfit on single-feature input
+# num_layers: 2 — two-layer stacked LSTM provides richer temporal encoding than single-layer
+# threshold_percentile: 95 — flags the top 5% highest reconstruction errors as anomalies
+window_size: 24
+batch_size: 64
+epochs: 50
+learning_rate: 0.001
+hidden_dim: 64
+num_layers: 2
+threshold_percentile: 95
