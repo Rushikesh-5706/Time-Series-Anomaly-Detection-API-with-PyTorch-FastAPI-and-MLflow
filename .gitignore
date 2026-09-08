@@ -16,6 +16,7 @@ ENV/
 
 # MLflow experiment tracking (large, not committed)
 /mlruns/
+mlflow.db
 
 # Environment variables (real values, not the example)
 .env
