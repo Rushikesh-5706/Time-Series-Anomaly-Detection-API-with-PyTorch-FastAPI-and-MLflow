@@ -81,3 +81,28 @@ class TestModelInfoEndpoint:
         body = client.get("/model-info").json()
         for key in ("window_size", "hidden_dim", "num_layers", "threshold"):
             assert key in body
+
+
+class TestRateLimiter:
+    @pytest.fixture(autouse=True)
+    def reset_limiter(self, client: TestClient) -> None:
+        """Reset the in-memory rate-limit counter before this test.
+        The MemoryStorage backend is a singleton attached to the app, so
+        requests from earlier tests in the session accumulate unless cleared."""
+        from src.api.main import limiter
+        limiter._storage.reset()
+
+    def test_rate_limit_trips_at_61_requests(self, client: TestClient) -> None:
+        """The slowapi limiter is set to 60/minute. The 61st request in the
+        same minute must be rejected with HTTP 429 Too Many Requests."""
+        payload = _valid_payload()
+        responses = [client.post("/predict", json=payload) for _ in range(60)]
+        assert all(r.status_code == 200 for r in responses), (
+            "First 60 requests must all succeed (within rate limit)"
+        )
+        throttled = client.post("/predict", json=payload)
+        assert throttled.status_code == 429, (
+            f"Expected 429 on request 61, got {throttled.status_code}"
+        )
+
+

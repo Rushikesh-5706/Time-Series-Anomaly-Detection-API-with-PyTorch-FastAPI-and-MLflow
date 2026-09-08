@@ -28,6 +28,14 @@ jobs:
       - name: Run test suite
         run: pytest tests/ -v --tb=short
 
+      # Upload trained artifacts so the Docker job can reuse them
+      - name: Upload training artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: trained-artifacts
+          path: artifacts/
+          retention-days: 1
+
   build-and-push-image:
     needs: test
     runs-on: ubuntu-latest
@@ -39,17 +47,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        
-      # We need to run training quickly to generate artifacts for the Docker image
-      - name: Set up Python
-        uses: actions/setup-python@v5
+
+      # Reuse artifacts from the test job — no re-training
+      - name: Download training artifacts
+        uses: actions/download-artifact@v4
         with:
-          python-version: "3.12"
-          cache: "pip"
-      - name: Install dependencies and generate artifacts
-        run: |
-          pip install -r requirements.txt
-          python train.py
+          name: trained-artifacts
+          path: artifacts/
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3
