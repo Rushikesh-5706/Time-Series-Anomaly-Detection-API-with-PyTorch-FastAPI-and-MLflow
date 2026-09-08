@@ -108,7 +108,8 @@ Production images are distributed via Docker Hub under the account `rushi5706`. 
 }
 ```
 
-`data_point` must contain exactly `window_size` (24) floats representing one hour-aligned window of taxi ridership values.
+`data_point` must contain exactly `window_size` (24) floats representing one 12-hour window of taxi
+ridership readings (the dataset is sampled every 30 minutes; 24 steps = 12 hours).
 
 **Response `200`**
 
@@ -146,19 +147,34 @@ Health check:
 curl -s http://localhost:8000/health
 ```
 
-Predict (24 real values from the NYC taxi validation set):
+Predict — real window from the validation split (`values[8256:8280]` from the chronologically sorted dataset,
+rows 8256–8279, timestamps `2014-12-20 00:00` through `2014-12-20 11:30`):
 
 ```bash
 curl -s -X POST http://localhost:8000/predict \
   -H "Content-Type: application/json" \
   -d '{
     "data_point": [
-      10844.0, 8127.0, 6210.0, 4656.0, 3820.0, 3239.0,
-      3031.0, 3619.0, 5618.0, 7796.0, 9867.0, 11407.0,
-      12459.0, 13092.0, 13415.0, 13302.0, 13341.0, 13271.0,
-      12724.0, 12523.0, 12418.0, 12152.0, 11456.0, 10844.0
+      25976.0, 24322.0, 22993.0, 21186.0, 19390.0, 16298.0,
+      14308.0, 12289.0, 10822.0, 6612.0, 4648.0, 3998.0,
+      4080.0, 5139.0, 4833.0, 6360.0, 7568.0, 10329.0,
+      11646.0, 15228.0, 16173.0, 18920.0, 19813.0, 21529.0
     ]
   }'
+```
+
+Actual response (from a live `uvicorn` instance against the committed artifacts, SEED=42):
+
+```json
+{
+  "input_data": [25976.0, 24322.0, 22993.0, 21186.0, 19390.0, 16298.0, 14308.0,
+                 12289.0, 10822.0, 6612.0, 4648.0, 3998.0, 4080.0, 5139.0, 4833.0,
+                 6360.0, 7568.0, 10329.0, 11646.0, 15228.0, 16173.0, 18920.0,
+                 19813.0, 21529.0],
+  "anomaly_score": 0.005520145874470472,
+  "is_anomaly": 0,
+  "threshold": 0.04163838177919388
+}
 ```
 
 Malformed request (wrong length — returns 422):
@@ -224,4 +240,4 @@ The suite covers:
 
 **StandardScaler fitted on the training split only.** Fitting the scaler on the full dataset lets the validation set's statistics (mean, variance) influence the normalization applied to training data. This is a subtle but real form of data leakage — in production the scaler will never have access to future data when it is initialized, so fitting it that way produces a scaler that behaves differently in training than in deployment. Fitting on train only and applying `transform` (not `fit_transform`) to val exactly mirrors what happens at inference time.
 
-**Percentile-based threshold.** A fixed reconstruction-error cutoff chosen by hand would be dataset-specific and brittle. Computing the threshold as a configurable percentile of the validation error distribution makes the decision data-driven and adjustable without retraining: raising `threshold_percentile` (e.g. to 99) tightens the criterion for anomaly flagging; lowering it (e.g. to 90) catches weaker deviations. The percentile is logged to MLflow so every run's threshold is reproducible.
+**Percentile-based threshold.** A fixed reconstruction-error cutoff chosen by hand would be dataset-specific and brittle. Computing the threshold as a configurable percentile of the validation error distribution makes the decision data-driven and adjustable without retraining: raising `threshold_percentile` (e.g. to 99) tightens the criterion for anomaly flagging; lowering it (e.g. to 90) catches weaker deviations. The percentile is logged to MLflow, and training is seeded (`SEED=42`) so that every run against the same dataset produces the same threshold.

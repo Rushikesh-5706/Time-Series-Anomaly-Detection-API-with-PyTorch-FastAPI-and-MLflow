@@ -1,4 +1,4 @@
-# window_size: 24 — one full day of hourly NYC taxi readings; captures the diurnal cycle
+# window_size: 24 — NYC taxi CSV is sampled every 30 minutes; 24 steps = 12 hours, covering a half-day cycle
 # batch_size: 64 — stable gradient estimates for ~8k training sequences
 # epochs: 50 — sufficient convergence for LSTM autoencoder on this 1D dataset
 # learning_rate: 0.001 — Adam default, well-proven across LSTM autoencoder literature

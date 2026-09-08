@@ -16,7 +16,7 @@ import numpy as np
 import torch
 import yaml
 from fastapi import FastAPI, HTTPException, Request
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -46,13 +46,6 @@ CONFIG_PATH = PROJECT_ROOT / "config.yaml"
 # ---------------------------------------------------------------------------
 class PredictRequest(BaseModel):
     data_point: List[float]
-
-    @field_validator("data_point")
-    @classmethod
-    def check_length(cls, v: List[float]) -> List[float]:
-        # Window size is validated at runtime against the loaded config.
-        # Length check happens in the handler where the config is in scope.
-        return v
 
 
 class PredictResponse(BaseModel):

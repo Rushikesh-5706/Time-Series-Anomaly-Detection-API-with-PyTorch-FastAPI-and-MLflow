@@ -2,7 +2,7 @@ services:
   anomaly_api:
     build: .
     ports:
-      - "${PORT:-8000}:8000"
+      - "8000:8000"
     env_file:
       - .env.example
     restart: unless-stopped

@@ -9,6 +9,7 @@ artifacts to artifacts/ for stable, run-id-agnostic loading by the API.
 
 import logging
 import os
+import random
 import shutil
 import tempfile
 from pathlib import Path
@@ -30,6 +31,17 @@ logging.basicConfig(
     force=True,
 )
 logger = logging.getLogger(__name__)
+
+SEED = 42
+
+
+def set_seed(seed: int) -> None:
+    """Pin all RNG sources so training is deterministic across runs."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
 
 PROJECT_ROOT = Path(__file__).parent
 CONFIG_PATH = PROJECT_ROOT / "config.yaml"
@@ -66,6 +78,7 @@ def compute_reconstruction_errors(
 
 
 def train() -> None:
+    set_seed(SEED)
     cfg = load_config(CONFIG_PATH)
 
     window_size: int = cfg["window_size"]
